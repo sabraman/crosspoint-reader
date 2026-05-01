@@ -107,4 +107,3 @@ void I18n::loadSettings() {
     }
   }
 }
-
