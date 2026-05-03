@@ -28,16 +28,20 @@ bool FontInstaller::isValidFamilyName(const char* name) {
 }
 
 bool FontInstaller::ensureFamilyDir(const char* familyName) {
-  // Ensure base fonts directory exists
-  if (!Storage.exists(SdCardFontRegistry::FONTS_DIR)) {
-    if (!Storage.mkdir(SdCardFontRegistry::FONTS_DIR)) {
-      LOG_ERR("FONT", "Failed to create fonts dir: %s", SdCardFontRegistry::FONTS_DIR);
+  // Reuse the family's existing root if installed; otherwise pick the
+  // default-write root (hidden if no roots exist yet).
+  const char* root = SdCardFontRegistry::findFamilyRoot(familyName);
+  if (!root) root = SdCardFontRegistry::defaultWriteRoot();
+
+  if (!Storage.exists(root)) {
+    if (!Storage.mkdir(root)) {
+      LOG_ERR("FONT", "Failed to create fonts dir: %s", root);
       return false;
     }
   }
 
-  char dirPath[128];
-  snprintf(dirPath, sizeof(dirPath), "%s/%s", SdCardFontRegistry::FONTS_DIR, familyName);
+  char dirPath[160];
+  snprintf(dirPath, sizeof(dirPath), "%s/%s", root, familyName);
 
   if (!Storage.exists(dirPath)) {
     if (!Storage.mkdir(dirPath)) {
@@ -73,7 +77,11 @@ bool FontInstaller::validateCpfontFile(const char* path) {
 }
 
 void FontInstaller::buildFontPath(const char* family, const char* filename, char* outBuf, size_t outBufSize) {
-  snprintf(outBuf, outBufSize, "%s/%s/%s", SdCardFontRegistry::FONTS_DIR, family, filename);
+  // Use the same root selection as ensureFamilyDir: existing install dir wins,
+  // otherwise the default-write root.
+  const char* root = SdCardFontRegistry::findFamilyRoot(family);
+  if (!root) root = SdCardFontRegistry::defaultWriteRoot();
+  snprintf(outBuf, outBufSize, "%s/%s/%s", root, family, filename);
 }
 
 FontInstaller::Error FontInstaller::deleteFamily(const char* familyName) {
@@ -81,19 +89,27 @@ FontInstaller::Error FontInstaller::deleteFamily(const char* familyName) {
     return Error::INVALID_FAMILY_NAME;
   }
 
-  char dirPath[128];
-  snprintf(dirPath, sizeof(dirPath), "%s/%s", SdCardFontRegistry::FONTS_DIR, familyName);
+  // A family may exist in either root (or, edge case, both). Remove from both.
+  const char* roots[] = {SdCardFontRegistry::FONTS_DIR_HIDDEN, SdCardFontRegistry::FONTS_DIR_VISIBLE};
+  bool removedAny = false;
+  bool sawAny = false;
+  for (const char* root : roots) {
+    char dirPath[160];
+    snprintf(dirPath, sizeof(dirPath), "%s/%s", root, familyName);
+    if (!Storage.exists(dirPath)) continue;
+    sawAny = true;
+    if (!Storage.removeDir(dirPath)) {
+      LOG_ERR("FONT", "Failed to remove family dir: %s", dirPath);
+      return Error::SD_WRITE_ERROR;
+    }
+    removedAny = true;
+  }
 
-  if (!Storage.exists(dirPath)) {
-    LOG_DBG("FONT", "Family dir does not exist: %s", dirPath);
+  if (!sawAny) {
+    LOG_DBG("FONT", "Family not found in any fonts root: %s", familyName);
     return Error::OK;  // Already gone
   }
-
-  // Recursively remove the directory and all its contents
-  if (!Storage.removeDir(dirPath)) {
-    LOG_ERR("FONT", "Failed to remove family dir: %s", dirPath);
-    return Error::SD_WRITE_ERROR;
-  }
+  (void)removedAny;
 
   // If this was the active font, clear the setting
   if (strcmp(SETTINGS.sdFontFamilyName, familyName) == 0) {

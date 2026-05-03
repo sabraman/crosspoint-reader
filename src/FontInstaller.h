@@ -22,14 +22,17 @@ class FontInstaller {
   /// Validate a family name: alphanumeric + hyphen + underscore only, no path traversal.
   static bool isValidFamilyName(const char* name);
 
-  /// Ensure /.crosspoint/fonts/<family>/ directory exists.
+  /// Ensure /<root>/<family>/ exists, where <root> is /.fonts (preferred) or /fonts.
+  /// Re-uses the existing root if the family is already installed; otherwise
+  /// creates it under SdCardFontRegistry::defaultWriteRoot().
   bool ensureFamilyDir(const char* familyName);
 
   /// Validate a .cpfont file on disk (check magic bytes).
   bool validateCpfontFile(const char* path);
 
   /// Build the full SD path for a font file.
-  /// Writes "/.crosspoint/fonts/<family>/<filename>" to outBuf.
+  /// Writes "/<root>/<family>/<filename>" to outBuf, choosing <root> the same
+  /// way ensureFamilyDir does (existing install dir, else default-write root).
   static void buildFontPath(const char* family, const char* filename, char* outBuf, size_t outBufSize);
 
   /// Delete a family directory and all .cpfont files in it.
