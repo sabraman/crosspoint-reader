@@ -49,15 +49,15 @@ jobs:
         run: >
           python3 scripts/generate-font-manifest.py
           --input dist
-          --base-url "https://github.com/${{ github.repository }}/releases/download/sd-fonts-m${VERSION_METADATA}-b${VERSION_BINARY_FORMAT}/"
+          --base-url "https://github.com/${{ github.repository }}/releases/download/sd-fonts-m${{ env.VERSION_METADATA }}-b${{ env.VERSION_BINARY_FORMAT }}/"
           --output dist/fonts.json
           --descriptions-from lib/EpdFont/scripts/sd-fonts.yaml
 
       - name: Publish to sd-fonts release
         uses: softprops/action-gh-release@v2.5.0
         with:
-          tag_name: sd-fonts
-          name: SD Card Fonts
+          tag_name: sd-fonts-m${{ env.VERSION_METADATA }}-b${{ env.VERSION_BINARY_FORMAT }}
+          name: SD Card Fonts (m${{ env.VERSION_METADATA }}-b${{ env.VERSION_BINARY_FORMAT }})
           body: |
             Pre-built `.cpfont` font files for CrossPoint Reader.
 
