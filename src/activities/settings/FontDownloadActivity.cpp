@@ -63,8 +63,6 @@ void FontDownloadActivity::onWifiSelectionComplete(const bool success) {
 
 // --- Manifest fetching ---
 
-static constexpr int FONTS_MANIFEST_VERSION = 1;
-
 bool FontDownloadActivity::fetchAndParseManifest() {
   // Download manifest to a temp file on SD card to avoid holding both
   // TLS buffers and the full JSON string in RAM simultaneously.

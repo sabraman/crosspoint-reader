@@ -28,7 +28,8 @@ static uint32_t fnv1a(const uint8_t* data, size_t len, uint32_t hash = FNV_OFFSE
 
 // .cpfont magic bytes
 static constexpr char CPFONT_MAGIC[8] = {'C', 'P', 'F', 'O', 'N', 'T', '\0', '\0'};
-static constexpr uint16_t CPFONT_VERSION = 4;
+// CPFONT_VERSION is defined as a #define in SdCardFont.h so it can be
+// stringified into FONT_MANIFEST_URL.
 static constexpr uint32_t HEADER_SIZE = 32;
 static constexpr uint32_t STYLE_TOC_ENTRY_SIZE = 32;
 
