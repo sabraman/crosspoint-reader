@@ -6,6 +6,9 @@ name: Build & Publish SD Card Fonts
 # firmware can fetch them from a stable URL.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/sd-fonts-v1 # remove when merging to main
 
 # metadata & binary version numbers to use for release
 env:
