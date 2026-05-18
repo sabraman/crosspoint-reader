@@ -356,6 +356,7 @@ bool JpegToFramebufferConverter::getDimensionsStatic(const std::string& imagePat
   int rc = jpeg->open(imagePath.c_str(), jpegOpen, jpegClose, jpegRead, jpegSeek, nullptr);
   if (rc != 1) {
     LOG_ERR("JPG", "Failed to open JPEG for dimensions (err=%d): %s", jpeg->getLastError(), imagePath.c_str());
+    jpeg->close();
     delete jpeg;
     return false;
   }
@@ -394,6 +395,7 @@ bool JpegToFramebufferConverter::decodeToFramebuffer(const std::string& imagePat
   int rc = jpeg->open(imagePath.c_str(), jpegOpen, jpegClose, jpegRead, jpegSeek, jpegDrawCallback);
   if (rc != 1) {
     LOG_ERR("JPG", "Failed to open JPEG (err=%d): %s", jpeg->getLastError(), imagePath.c_str());
+    jpeg->close();
     delete jpeg;
     return false;
   }

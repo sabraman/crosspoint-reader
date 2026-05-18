@@ -255,6 +255,7 @@ bool PngToFramebufferConverter::getDimensionsStatic(const std::string& imagePath
 
   if (rc != 0) {
     LOG_ERR("PNG", "Failed to open PNG for dimensions: %d", rc);
+    png->close();
     delete png;
     return false;
   }
@@ -294,6 +295,7 @@ bool PngToFramebufferConverter::decodeToFramebuffer(const std::string& imagePath
                      pngDrawCallback);
   if (rc != PNG_SUCCESS) {
     LOG_ERR("PNG", "Failed to open PNG: %d", rc);
+    png->close();
     delete png;
     return false;
   }

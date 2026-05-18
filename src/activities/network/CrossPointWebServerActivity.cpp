@@ -32,6 +32,14 @@ constexpr int QR_CODE_HEIGHT = 198;
 DNSServer* dnsServer = nullptr;
 constexpr uint16_t DNS_PORT = 53;
 
+void stopDnsServer() {
+  if (!dnsServer) return;
+
+  dnsServer->stop();
+  delete dnsServer;
+  dnsServer = nullptr;
+}
+
 // 0..4 bars from RSSI (dBm), with 3 dBm hysteresis on currentBars to suppress flicker.
 int barsForRssi(int rssi, int currentBars) {
   static constexpr int RISE_DBM[] = {-85, -75, -65, -55};
@@ -75,6 +83,7 @@ void CrossPointWebServerActivity::onExit() {
   LOG_DBG("WEBACT", "Free heap at onExit start: %d bytes", ESP.getFreeHeap());
 
   state = WebServerActivityState::SHUTTING_DOWN;
+  stopDnsServer();
 
   // Skip reboot if WiFi was never activated (e.g. user backed out of mode selection).
   if (WiFi.getMode() != WIFI_MODE_NULL) {
@@ -217,6 +226,7 @@ void CrossPointWebServerActivity::startAccessPoint() {
 
   // Start DNS server for captive portal behavior
   // This redirects all DNS queries to our IP, making any domain typed resolve to us
+  stopDnsServer();
   dnsServer = new DNSServer();
   dnsServer->setErrorReplyCode(DNSReplyCode::NoError);
   dnsServer->start(DNS_PORT, "*", apIP);
