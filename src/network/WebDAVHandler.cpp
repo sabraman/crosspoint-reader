@@ -118,7 +118,7 @@ void WebDAVHandler::raw(WebServer& server, const String& uri, HTTPRaw& raw) {
         _putOk = false;
       }
       if (_putOk) {
-        if (_putExisted) Storage.remove(backupPath.c_str());
+        if (_putExisted) FsHelpers::removeBackup(backupPath.c_str(), _putPath.c_str(), "DAV", "PUT");
       } else if (_putExisted && !backupPath.isEmpty()) {
         FsHelpers::restoreBackup(backupPath.c_str(), _putPath.c_str(), "DAV", "PUT");
       }
@@ -258,7 +258,7 @@ void WebDAVHandler::handlePropfind(WebServer& s) {
       bool shouldHide = fileName.startsWith(".");
       if (!shouldHide) {
         for (const auto* item : HIDDEN_ITEMS) {
-          if (fileName.equals(item)) {
+          if (fileName.equalsIgnoreCase(item)) {
             shouldHide = true;
             break;
           }
@@ -600,7 +600,7 @@ void WebDAVHandler::handleMove(WebServer& s) {
   file.close();
 
   if (success) {
-    if (!backupPath.isEmpty()) Storage.remove(backupPath.c_str());
+    FsHelpers::removeBackup(backupPath.c_str(), dstPath.c_str(), "DAV", "MOVE");
     clearEpubCacheIfNeeded(dstPath);
     s.send(dstExists ? 204 : 201);
   } else {
@@ -695,6 +695,10 @@ void WebDAVHandler::handleCopy(WebServer& s) {
   while (srcFile.available()) {
     esp_task_wdt_reset();
     int bytesRead = srcFile.read(buf, sizeof(buf));
+    if (bytesRead < 0) {
+      copyOk = false;
+      break;
+    }
     if (bytesRead <= 0) break;
     size_t written = dstFile.write(buf, bytesRead);
     if (written != (size_t)bytesRead) {
@@ -736,7 +740,7 @@ void WebDAVHandler::handleCopy(WebServer& s) {
   if (tmp) tmp.close();
 
   if (renamed) {
-    if (!backupPath.isEmpty()) Storage.remove(backupPath.c_str());
+    FsHelpers::removeBackup(backupPath.c_str(), dstPath.c_str(), "DAV", "COPY");
     clearEpubCacheIfNeeded(dstPath);
     s.send(dstExists ? 204 : 201);
   } else {
@@ -874,7 +878,7 @@ bool WebDAVHandler::isProtectedPath(const String& path) const {
     if (segment.startsWith(".")) return true;
 
     for (const auto* item : HIDDEN_ITEMS) {
-      if (segment.equals(item)) return true;
+      if (segment.equalsIgnoreCase(item)) return true;
     }
 
     start = end + 1;

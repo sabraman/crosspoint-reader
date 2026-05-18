@@ -83,7 +83,7 @@ bool isProtectedItemName(const String& name) {
     return true;
   }
   for (const auto* item : HIDDEN_ITEMS) {
-    if (name.equals(item)) {
+    if (name.equalsIgnoreCase(item)) {
       return true;
     }
   }
@@ -115,7 +115,7 @@ bool isValidWebPathComponent(const String& name) {
   if (name.isEmpty()) {
     return false;
   }
-  if (name.indexOf('/') >= 0 || name.indexOf('\\') >= 0 || name.indexOf("..") >= 0) {
+  if (name.indexOf('/') >= 0 || name.indexOf('\\') >= 0 || name == "." || name == "..") {
     return false;
   }
   return !isProtectedItemName(name);
@@ -444,7 +444,7 @@ void CrossPointWebServer::scanFiles(const char* path, const std::function<void(F
     // Check against explicitly hidden items list
     if (!shouldHide) {
       for (const auto* item : HIDDEN_ITEMS) {
-        if (fileName.equals(item)) {
+        if (fileName.equalsIgnoreCase(item)) {
           shouldHide = true;
           break;
         }
@@ -482,18 +482,10 @@ void CrossPointWebServer::handleFileList() const {
 }
 
 void CrossPointWebServer::handleFileListData() const {
-  // Get current path from query string (default to root)
-  String currentPath = "/";
-  if (server->hasArg("path")) {
-    currentPath = server->arg("path");
-    // Ensure path starts with /
-    if (!currentPath.startsWith("/")) {
-      currentPath = "/" + currentPath;
-    }
-    // Remove trailing slash unless it's root
-    if (currentPath.length() > 1 && currentPath.endsWith("/")) {
-      currentPath = currentPath.substring(0, currentPath.length() - 1);
-    }
+  const String currentPath = server->hasArg("path") ? normalizeWebPath(server->arg("path")) : "/";
+  if (isProtectedWebPath(currentPath)) {
+    server->send(403, "text/plain", "Cannot access protected items");
+    return;
   }
 
   server->setContentLength(CONTENT_LENGTH_UNKNOWN);

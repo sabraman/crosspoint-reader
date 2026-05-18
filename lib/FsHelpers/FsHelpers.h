@@ -69,6 +69,7 @@ std::string extractFolderPath(const std::string& filePath);
 std::string makeTempPath(const std::string& targetPath, const char* prefix, bool timestampHex = true);
 String makeTempPath(const String& targetPath, const char* prefix, bool timestampHex = true);
 bool pathIsDirectory(const char* path);
+void removeBackup(const char* backupPath, const char* targetPath, const char* moduleName, const char* operation);
 bool commitTempFile(const char* tempPath, const char* targetPath, bool existed, const char* moduleName,
                     const char* backupPrefix, bool timestampHex = true);
 void restoreBackup(const char* backupPath, const char* targetPath, const char* moduleName, const char* operation);

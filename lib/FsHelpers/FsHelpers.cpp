@@ -90,6 +90,13 @@ bool pathIsDirectory(const char* path) {
   return isDirectory;
 }
 
+void removeBackup(const char* backupPath, const char* targetPath, const char* moduleName, const char* operation) {
+  if (backupPath == nullptr || backupPath[0] == '\0') return;
+  if (!Storage.remove(backupPath)) {
+    LOG_ERR(moduleName, "%s succeeded but failed to delete backup %s for %s", operation, backupPath, targetPath);
+  }
+}
+
 bool commitTempFile(const char* tempPath, const char* targetPath, bool existed, const char* moduleName,
                     const char* backupPrefix, bool timestampHex) {
   std::string backupPath;
@@ -108,7 +115,7 @@ bool commitTempFile(const char* tempPath, const char* targetPath, bool existed, 
   if (tempFile) tempFile.close();
 
   if (renamed) {
-    if (!backupPath.empty()) Storage.remove(backupPath.c_str());
+    removeBackup(backupPath.c_str(), targetPath, moduleName, "Commit");
     return true;
   }
 
